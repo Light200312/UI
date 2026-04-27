@@ -1,12 +1,18 @@
 /* Todo List Component Styles */
 
 .todo-container {
+  width: min(960px, 100%);
   max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  border-radius: 10px;
+  margin: 0 auto 32px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.14);
+  height: 95vh;
+  border-radius: 28px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -73,6 +79,46 @@
   border-radius: 10px;
   margin-bottom: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.filters-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.filters-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+
+.filters-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+.filters-toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #4338ca 0%, #7c3aed 100%);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filters-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(76, 29, 149, 0.22);
+}
+
+.filters-content {
+  margin-top: 16px;
 }
 
 .search-input {
@@ -165,10 +211,13 @@
 
 /* Tasks Section */
 .tasks-section {
+  flex: 1;
+  min-height: 0;
   background: rgba(255, 255, 255, 0.95);
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
 .empty-state {
@@ -182,6 +231,15 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tasks-list::-webkit-scrollbar {
+  display: none;
 }
 
 /* Responsive Design */
@@ -203,7 +261,18 @@
     grid-template-columns: 1fr;
   }
 
+  .filters-header {
+    flex-direction: column;
+  }
+
   .todo-container {
-    padding: 10px;
+    height: auto;
+    max-height: none;
+    padding: 16px;
+  }
+
+  .tasks-section,
+  .tasks-list {
+    min-height: auto;
   }
 }

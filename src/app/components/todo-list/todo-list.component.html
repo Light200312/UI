@@ -23,56 +23,68 @@
 
   <!-- Filters Section -->
   <div class="filters-section">
-    <div class="filter-group">
-      <input 
-        type="text" 
-        placeholder="🔍 Search tasks..." 
-        [(ngModel)]="searchQuery"
-        (input)="onFilterChange()"
-        class="search-input"
-      />
+    <div class="filters-header">
+      <div>
+        <h2>Search and Filters</h2>
+        <p>Refine the list when you need to, or collapse this section for more task space.</p>
+      </div>
+      <button type="button" class="filters-toggle" (click)="toggleFilters()">
+        {{ showFilters ? 'Hide Filters' : 'Show Filters' }}
+      </button>
     </div>
 
-    <div class="filter-row">
+    <div *ngIf="showFilters" class="filters-content">
       <div class="filter-group">
-        <label>Status:</label>
-        <select [(ngModel)]="filterStatus" (change)="onFilterChange()" class="filter-select">
-          <option value="all">All Tasks</option>
-          <option value="pending">Pending</option>
-          <option value="completed">Completed</option>
-        </select>
+        <input 
+          type="text" 
+          placeholder="🔍 Search tasks..." 
+          [(ngModel)]="searchQuery"
+          (input)="onFilterChange()"
+          class="search-input"
+        />
       </div>
 
-      <div class="filter-group">
-        <label>Priority:</label>
-        <select [(ngModel)]="filterPriority" (change)="onFilterChange()" class="filter-select">
-          <option value="all">All Priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Status:</label>
+          <select [(ngModel)]="filterStatus" (change)="onFilterChange()" class="filter-select">
+            <option value="all">All Tasks</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Priority:</label>
+          <select [(ngModel)]="filterPriority" (change)="onFilterChange()" class="filter-select">
+            <option value="all">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Category:</label>
+          <select [(ngModel)]="filterCategory" (change)="onFilterChange()" class="filter-select">
+            <option value="all">All Categories</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Sort By:</label>
+          <select [(ngModel)]="sortBy" (change)="onSortChange()" class="filter-select">
+            <option value="createdAt">Newest First</option>
+            <option value="dueDate">Due Date</option>
+            <option value="priority">Priority</option>
+          </select>
+        </div>
       </div>
 
-      <div class="filter-group">
-        <label>Category:</label>
-        <select [(ngModel)]="filterCategory" (change)="onFilterChange()" class="filter-select">
-          <option value="all">All Categories</option>
-          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
-        </select>
+      <div *ngIf="getCompletedCount() > 0" class="clear-completed">
+        <button class="btn btn-secondary" (click)="clearCompletedTasks()">Clear Completed Tasks</button>
       </div>
-
-      <div class="filter-group">
-        <label>Sort By:</label>
-        <select [(ngModel)]="sortBy" (change)="onSortChange()" class="filter-select">
-          <option value="createdAt">Newest First</option>
-          <option value="dueDate">Due Date</option>
-          <option value="priority">Priority</option>
-        </select>
-      </div>
-    </div>
-
-    <div *ngIf="getCompletedCount() > 0" class="clear-completed">
-      <button class="btn btn-secondary" (click)="clearCompletedTasks()">Clear Completed Tasks</button>
     </div>
   </div>
 

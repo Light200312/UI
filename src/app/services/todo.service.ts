@@ -51,11 +51,21 @@ export class TodoService {
     return this.http.get<Task>(`${this.apiUrl}/${id}`);
   }
 
+  private sortTasks(tasks: Task[]): Task[] {
+    return [...tasks].sort((a, b) => {
+      const first = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const second = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return second - first;
+    });
+  }
+
   // Create a new task
   createTask(task: Task): Observable<Task> {
     return this.http.post<Task>(this.apiUrl, task)
       .pipe(
-        tap(() => this.loadTasks())
+        tap((createdTask) => {
+          this.tasksSubject.next(this.sortTasks([createdTask, ...this.tasksSubject.value]));
+        })
       );
   }
 
@@ -63,7 +73,12 @@ export class TodoService {
   updateTask(id: string, task: Partial<Task>): Observable<Task> {
     return this.http.patch<Task>(`${this.apiUrl}/${id}`, task)
       .pipe(
-        tap(() => this.loadTasks())
+        tap((updatedTask) => {
+          const updatedTasks = this.tasksSubject.value.map((existingTask) =>
+            existingTask._id === id ? updatedTask : existingTask
+          );
+          this.tasksSubject.next(this.sortTasks(updatedTasks));
+        })
       );
   }
 
@@ -71,7 +86,9 @@ export class TodoService {
   deleteTask(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`)
       .pipe(
-        tap(() => this.loadTasks())
+        tap(() => {
+          this.tasksSubject.next(this.tasksSubject.value.filter((task) => task._id !== id));
+        })
       );
   }
 
@@ -79,7 +96,12 @@ export class TodoService {
   toggleTask(id: string): Observable<Task> {
     return this.http.patch<Task>(`${this.apiUrl}/${id}/toggle`, {})
       .pipe(
-        tap(() => this.loadTasks())
+        tap((updatedTask) => {
+          const updatedTasks = this.tasksSubject.value.map((existingTask) =>
+            existingTask._id === id ? updatedTask : existingTask
+          );
+          this.tasksSubject.next(this.sortTasks(updatedTasks));
+        })
       );
   }
 }

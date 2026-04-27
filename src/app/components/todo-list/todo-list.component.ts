@@ -25,6 +25,7 @@ export class TodoListComponent implements OnInit {
   filterCategory = 'all';
   sortBy = 'createdAt';
   searchQuery = '';
+  showFilters = true;
 
   categories: string[] = ['General'];
 
@@ -83,6 +84,10 @@ export class TodoListComponent implements OnInit {
 
   onSortChange(): void {
     this.loadTasks();
+  }
+
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
   }
 
   openAddForm(): void {
