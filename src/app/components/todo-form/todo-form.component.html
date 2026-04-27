@@ -1,0 +1,94 @@
+<div class="form-overlay">
+  <div class="form-modal">
+    <div class="form-header">
+      <h2>{{ task ? 'Edit Task' : 'Add New Task' }}</h2>
+      <button class="close-btn" (click)="cancel()">✕</button>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" class="todo-form">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Title -->
+      <div class="form-group">
+        <label for="title">Task Title *</label>
+        <input
+          id="title"
+          type="text"
+          [(ngModel)]="formData.title"
+          name="title"
+          placeholder="Enter task title..."
+          maxlength="100"
+          required
+          class="form-input"
+        />
+        <span class="char-count">{{ formData.title.length }}/100</span>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea
+          id="description"
+          [(ngModel)]="formData.description"
+          name="description"
+          placeholder="Enter task description..."
+          rows="4"
+          maxlength="500"
+          class="form-textarea"
+        ></textarea>
+        <span class="char-count">{{ (formData.description || '').length }}/500</span>
+      </div>
+
+      <!-- Priority -->
+      <div class="form-group">
+        <label for="priority">Priority</label>
+        <select
+          id="priority"
+          [(ngModel)]="formData.priority"
+          name="priority"
+          class="form-select"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label for="category">Category</label>
+        <input
+          id="category"
+          type="text"
+          [(ngModel)]="formData.category"
+          name="category"
+          placeholder="Enter category..."
+          class="form-input"
+        />
+      </div>
+
+      <!-- Due Date -->
+      <div class="form-group">
+        <label for="dueDate">Due Date</label>
+        <input
+          id="dueDate"
+          type="date"
+          [(ngModel)]="formData.dueDate"
+          name="dueDate"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Saving...' : (task ? 'Update Task' : 'Add Task') }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>

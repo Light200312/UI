@@ -1,0 +1,45 @@
+<div class="todo-item" [class.completed]="task.completed" [ngClass]="getPriorityClass()">
+  <div class="item-main">
+    <div class="item-checkbox">
+      <input 
+        type="checkbox" 
+        [checked]="task.completed"
+        (change)="toggleTask()"
+        class="checkbox"
+      />
+    </div>
+
+    <div class="item-content">
+      <div class="item-header">
+        <h3 class="item-title" [class.line-through]="task.completed">{{ task.title }}</h3>
+        <span class="priority-badge" [ngClass]="'priority-' + task.priority">
+          {{ task.priority | uppercase }}
+        </span>
+      </div>
+
+      <p *ngIf="task.description" class="item-description">{{ task.description }}</p>
+
+      <div class="item-meta">
+        <span class="category-tag">📁 {{ task.category }}</span>
+
+        <span *ngIf="task.dueDate" 
+          class="due-date" 
+          [class.overdue]="isOverdue()"
+          [class.due-today]="isDueToday()"
+          [class.due-soon]="isDueSoon()"
+        >
+          📅 {{ getDueDateDisplay() }}
+        </span>
+
+        <span *ngIf="isOverdue()" class="status-overdue">⚠️ Overdue</span>
+        <span *ngIf="isDueToday()" class="status-today">🔔 Due Today</span>
+        <span *ngIf="isDueSoon()" class="status-soon">⏰ Due Soon</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="item-actions">
+    <button class="btn-icon edit" (click)="editTask()" title="Edit">✏️</button>
+    <button class="btn-icon delete" (click)="deleteTask()" title="Delete">🗑️</button>
+  </div>
+</div>
