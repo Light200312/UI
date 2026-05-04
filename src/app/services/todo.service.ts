@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Task } from '../models/task.model';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,9 +13,10 @@ export class TodoService {
   private tasksSubject = new BehaviorSubject<Task[]>([]);
   public tasks$ = this.tasksSubject.asObservable();
 
-  constructor(private http: HttpClient) {
-    this.loadTasks();
-  }
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {}
 
   // Load all tasks
   loadTasks(sortBy: string = 'createdAt', filters?: any): void {
@@ -32,7 +34,7 @@ export class TodoService {
       }
     }
 
-    this.http.get<Task[]>(this.apiUrl, { params })
+    this.http.get<Task[]>(this.apiUrl, { params, headers: this.authService.getAuthHeaders() })
       .pipe(
         tap(tasks => this.tasksSubject.next(tasks))
       )
@@ -48,7 +50,9 @@ export class TodoService {
 
   // Get a single task by ID
   getTask(id: string): Observable<Task> {
-    return this.http.get<Task>(`${this.apiUrl}/${id}`);
+    return this.http.get<Task>(`${this.apiUrl}/${id}`, {
+      headers: this.authService.getAuthHeaders()
+    });
   }
 
   private sortTasks(tasks: Task[]): Task[] {
@@ -61,7 +65,9 @@ export class TodoService {
 
   // Create a new task
   createTask(task: Task): Observable<Task> {
-    return this.http.post<Task>(this.apiUrl, task)
+    return this.http.post<Task>(this.apiUrl, task, {
+      headers: this.authService.getAuthHeaders()
+    })
       .pipe(
         tap((createdTask) => {
           this.tasksSubject.next(this.sortTasks([createdTask, ...this.tasksSubject.value]));
@@ -71,7 +77,9 @@ export class TodoService {
 
   // Update a task
   updateTask(id: string, task: Partial<Task>): Observable<Task> {
-    return this.http.patch<Task>(`${this.apiUrl}/${id}`, task)
+    return this.http.patch<Task>(`${this.apiUrl}/${id}`, task, {
+      headers: this.authService.getAuthHeaders()
+    })
       .pipe(
         tap((updatedTask) => {
           const updatedTasks = this.tasksSubject.value.map((existingTask) =>
@@ -84,7 +92,9 @@ export class TodoService {
 
   // Delete a task
   deleteTask(id: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`)
+    return this.http.delete(`${this.apiUrl}/${id}`, {
+      headers: this.authService.getAuthHeaders()
+    })
       .pipe(
         tap(() => {
           this.tasksSubject.next(this.tasksSubject.value.filter((task) => task._id !== id));
@@ -94,7 +104,9 @@ export class TodoService {
 
   // Toggle task completion status
   toggleTask(id: string): Observable<Task> {
-    return this.http.patch<Task>(`${this.apiUrl}/${id}/toggle`, {})
+    return this.http.patch<Task>(`${this.apiUrl}/${id}/toggle`, {}, {
+      headers: this.authService.getAuthHeaders()
+    })
       .pipe(
         tap((updatedTask) => {
           const updatedTasks = this.tasksSubject.value.map((existingTask) =>
@@ -103,5 +115,9 @@ export class TodoService {
           this.tasksSubject.next(this.sortTasks(updatedTasks));
         })
       );
+  }
+
+  clearTasks(): void {
+    this.tasksSubject.next([]);
   }
 }

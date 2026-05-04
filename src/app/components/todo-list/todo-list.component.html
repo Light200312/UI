@@ -1,8 +1,14 @@
 <div class="todo-container">
   <!-- Header -->
   <div class="header">
-    <h1>📝 My Todo App</h1>
-    <button class="btn btn-primary" (click)="openAddForm()">+ Add New Task</button>
+    <div class="header-copy">
+      <h1>📝 My Todo App</h1>
+      <p *ngIf="currentUser">Signed in as {{ currentUser.name }}</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openAddForm()">+ Add New Task</button>
+      <button class="btn btn-ghost" (click)="requestLogout()">Logout</button>
+    </div>
   </div>
 
   <!-- Stats Bar -->

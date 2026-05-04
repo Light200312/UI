@@ -1,1 +1,14 @@
-<app-todo-list></app-todo-list>
+<div *ngIf="isCheckingSession" class="app-loading">
+  <div class="loading-card">Checking your session...</div>
+</div>
+
+<app-auth
+  *ngIf="!isCheckingSession && !currentUser"
+  (authenticated)="onAuthenticated($event)"
+></app-auth>
+
+<app-todo-list
+  *ngIf="!isCheckingSession && currentUser"
+  [currentUser]="currentUser"
+  (logout)="onLogout()"
+></app-todo-list>

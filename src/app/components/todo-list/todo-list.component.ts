@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TodoService } from '../../services/todo.service';
 import { Task } from '../../models/task.model';
 import { TodoFormComponent } from '../todo-form/todo-form.component';
 import { TodoItemComponent } from '../todo-item/todo-item.component';
+import { AuthUser } from '../../models/user.model';
 
 @Component({
   selector: 'app-todo-list',
@@ -14,6 +15,9 @@ import { TodoItemComponent } from '../todo-item/todo-item.component';
   styleUrls: ['./todo-list.component.css']
 })
 export class TodoListComponent implements OnInit {
+  @Input() currentUser: AuthUser | null = null;
+  @Output() logout = new EventEmitter<void>();
+
   tasks: Task[] = [];
   filteredTasks: Task[] = [];
   showForm = false;
@@ -151,5 +155,9 @@ export class TodoListComponent implements OnInit {
 
   getTotalCount(): number {
     return this.tasks.length;
+  }
+
+  requestLogout(): void {
+    this.logout.emit();
   }
 }
