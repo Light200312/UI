@@ -1,0 +1,632 @@
+
+\documentclass[11pt,a4paper]{article}
+
+%% ─── Packages ───────────────────────────────────────────────────────────────
+\usepackage[margin=0.85in, top=0.9in, bottom=0.9in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{titlesec}
+\usepackage{graphicx}
+\usepackage{mdframed}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{parskip}
+
+%% ─── Colours ─────────────────────────────────────────────────────────────────
+\definecolor{codebg}{RGB}{248,248,252}
+\definecolor{codeframe}{RGB}{210,214,230}
+\definecolor{codecomment}{RGB}{80,140,80}
+\definecolor{codestring}{RGB}{180,40,40}
+\definecolor{codekeyword}{RGB}{20,60,170}
+\definecolor{headerblue}{RGB}{30,60,130}
+\definecolor{accentblue}{RGB}{41,98,200}
+\definecolor{lightgray}{RGB}{245,246,250}
+\definecolor{screengray}{RGB}{200,200,210}
+
+%% ─── Code style ──────────────────────────────────────────────────────────────
+\lstdefinestyle{ts}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  showstringspaces=false,
+  keywordstyle=\color{codekeyword}\bfseries,
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  columns=fullflexible,
+  numbers=none,
+  xleftmargin=6pt,
+  xrightmargin=6pt
+}
+\lstdefinestyle{html}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  showstringspaces=false,
+  keywordstyle=\color{codekeyword}\bfseries,
+  stringstyle=\color{codestring},
+  columns=fullflexible,
+  numbers=none,
+  xleftmargin=6pt,
+  xrightmargin=6pt
+}
+
+%% ─── Hyperlinks ──────────────────────────────────────────────────────────────
+\hypersetup{colorlinks=true, linkcolor=accentblue, urlcolor=accentblue}
+
+%% ─── Spacing / lists ─────────────────────────────────────────────────────────
+\setstretch{1.13}
+\setlist[itemize]{noitemsep, topsep=3pt, leftmargin=*}
+\setlist[enumerate]{noitemsep, topsep=3pt, leftmargin=*}
+
+%% ─── Section headings ────────────────────────────────────────────────────────
+\titleformat{\section}
+  {\large\bfseries\color{headerblue}}
+  {\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}
+  {\normalsize\bfseries\color{accentblue}}
+  {}{0em}{}
+\titleformat{\subsubsection}
+  {\small\bfseries}
+  {}{0em}{}
+
+%% ─── Screenshot box ──────────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=lightgray,
+  linecolor=screengray,
+  linewidth=1pt,
+  innerleftmargin=8pt,
+  innerrightmargin=8pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=6pt,
+  skipbelow=6pt
+]{screenshotbox}
+
+%% ─── Document ────────────────────────────────────────────────────────────────
+\begin{document}
+
+%% ── Title block ──────────────────────────────────────────────────────────────
+\begin{center}
+  {\LARGE\bfseries\color{headerblue} MEAN Stack Practical File}\\[0.5em]
+  {\large\bfseries Authenticated Todo Management Application}\\[0.3em]
+  {\normalsize MongoDB \textbullet{} Express \textbullet{} Angular 19 \textbullet{} Node.js}
+\end{center}
+
+\noindent\rule{\linewidth}{0.8pt}
+
+%%═══════════════════════════════════════════════════════════════════════════════
+\section*{Practical 8 — Building a Single-Page Application with Angular}
+%%═══════════════════════════════════════════════════════════════════════════════
+
+\subsection*{Aim}
+To build an Angular Single-Page Application (SPA) that demonstrates navigation, modular
+component architecture, HTML content binding, routing with parameters, reactive forms, and
+server-submitted form data handling.
+
+\subsection*{Required Theory}
+An SPA loads a single HTML shell and then dynamically swaps content via Angular's router and
+component system.  Key Angular concepts used in this practical:
+
+\begin{itemize}
+  \item \textbf{Router \& Navigation} — \texttt{RouterOutlet}, \texttt{RouterModule},
+        \texttt{router.navigate([])}
+  \item \textbf{Routing Parameters} — \texttt{:id} path segment read via \texttt{ActivatedRoute}
+  \item \textbf{Modular Architecture} — standalone components, lazy loading, barrel imports
+  \item \textbf{Data Binding} — interpolation \texttt{\{\{\}\}}, property binding \texttt{[prop]},
+        event binding \texttt{(event)}, and two-way binding \texttt{[(ngModel)]}
+  \item \textbf{Template-Driven Forms} — \texttt{FormsModule}, \texttt{ngModel},
+        \texttt{ngSubmit}
+  \item \textbf{HTTP \& Services} — \texttt{HttpClient}, \texttt{BehaviorSubject} reactive stream
+\end{itemize}
+
+%% ── 8.1 App-Level Routing ────────────────────────────────────────────────────
+\subsection*{1.\ Route Definitions — \texttt{app.routes.ts}}
+
+The application defines four routes.  The \textbf{dashboard} and \textbf{task/:id} routes are
+protected by an auth guard and loaded lazily.
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+export const routes: Routes = [
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./components/auth/auth.component')
+        .then(m => m.AuthComponent)
+  },
+  {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./components/todo-list/todo-list.component')
+        .then(m => m.TodoListComponent),
+    canActivate: [authGuard]        // route protection
+  },
+  {
+    // Routing parameter: task detail page via /task/:id
+    path: 'task/:id',
+    loadComponent: () =>
+      import('./components/task-detail/task-detail.component')
+        .then(m => m.TaskDetailComponent),
+    canActivate: [authGuard]
+  },
+  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  { path: '**',  redirectTo: 'dashboard' }
+];
+\end{lstlisting}
+
+%% ── 8.2 Root Component  ──────────────────────────────────────────────────────
+\subsection*{2.\ Root Component — \texttt{app.ts}}
+
+The root component acts as the shell.  It validates the stored JWT on every startup and
+navigates the user accordingly.
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CommonModule, RouterOutlet],
+  templateUrl: './app.html'
+})
+export class App implements OnInit {
+  isCheckingSession = true;
+
+  constructor(private authService: AuthService,
+              private router: Router,
+              private cdr: ChangeDetectorRef) {
+    // Hydrate user from localStorage immediately so components
+    // know a session exists before the async token check finishes.
+    this.authService.hydrateSessionFromStorage();
+  }
+
+  ngOnInit(): void {
+    this.authService.restoreSession().subscribe(user => {
+      this.isCheckingSession = false;
+      this.cdr.detectChanges();        // prevent NG0100 in SSR
+      if (user) {
+        if (this.router.url === '/login' || this.router.url === '/')
+          this.router.navigate(['/dashboard']);
+      } else {
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+}
+\end{lstlisting}
+
+%% ── 8.3 Routing Parameters ───────────────────────────────────────────────────
+\subsection*{3.\ Reading Route Parameters — \texttt{task-detail.component.ts}}
+
+The \texttt{task/:id} route passes the task ObjectId in the URL.
+\texttt{ActivatedRoute.paramMap} is used to read the parameter and fetch the matching task.
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+export class TaskDetailComponent implements OnInit {
+  task: Task | null = null;
+  taskId: string | null = null;
+
+  constructor(private route: ActivatedRoute,
+              private router: Router,
+              private todoService: TodoService) {}
+
+  ngOnInit(): void {
+    this.route.paramMap.subscribe(params => {
+      this.taskId = params.get('id');     // read :id from URL
+      if (!this.taskId) {
+        this.router.navigate(['/dashboard']);
+        return;
+      }
+      this.todoService.getTask(this.taskId).pipe(
+        timeout(8000),
+        catchError(() => {
+          this.errorMessage = 'Task not found.';
+          return of(null);
+        })
+      ).subscribe(task => { this.task = task; });
+    });
+  }
+}
+\end{lstlisting}
+
+Navigation to the detail page from the list uses:
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+viewTaskDetail(task: Task): void {
+  this.router.navigate(['/task', task._id]);   // /task/abc123
+}
+\end{lstlisting}
+
+%% ── 8.4 Template-Driven Form ─────────────────────────────────────────────────
+\subsection*{4.\ Template-Driven Form — \texttt{auth.component.html}}
+
+Two-way binding via \texttt{[(ngModel)]} and form submission via \texttt{(ngSubmit)}:
+
+\begin{lstlisting}[style=html]
+<form class="auth-form" (ngSubmit)="submit()">
+  <!-- Conditional field shown only for registration -->
+  <div *ngIf="mode === 'register'" class="form-group">
+    <label for="name">Name</label>
+    <input id="name" name="name" [(ngModel)]="form.name"
+           type="text" placeholder="Your name" />
+  </div>
+
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input id="email" name="email" [(ngModel)]="form.email"
+           type="email" placeholder="you@example.com" />
+  </div>
+
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input id="password" name="password"
+           [(ngModel)]="form.password" type="password" />
+  </div>
+
+  <p *ngIf="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+  <button type="submit" [disabled]="isSubmitting">
+    {{ isSubmitting ? 'Please wait...'
+       : (mode === 'login' ? 'Login' : 'Create Account') }}
+  </button>
+</form>
+\end{lstlisting}
+
+%% ── 8.5 Filter Form + Data Binding ──────────────────────────────────────────
+\subsection*{5.\ Content Binding \& Filter Form — \texttt{todo-list.component.html}}
+
+The dashboard demonstrates multiple binding techniques simultaneously:
+
+\begin{lstlisting}[style=html]
+<!-- Interpolation binding: show live stats -->
+<span>Total: {{ getTotalCount() }}</span>
+<span>Pending: {{ getPendingCount() }}</span>
+
+<!-- Two-way binding on search input -->
+<input type="text" placeholder="Search tasks..."
+       [(ngModel)]="searchQuery" (input)="onFilterChange()" />
+
+<!-- Property + event binding on select -->
+<select [(ngModel)]="filterPriority"
+        (change)="onFilterChange()">
+  <option value="all">All Priorities</option>
+  <option value="high">High</option>
+</select>
+
+<!-- *ngFor to render task list -->
+<app-todo-item *ngFor="let task of filteredTasks"
+  [task]="task"
+  (onToggle)="toggleTask($event)"
+  (onEdit)="openEditForm($event)"
+  (onDelete)="deleteTask($event)">
+</app-todo-item>
+\end{lstlisting}
+
+%% ── 8.6 TodoService — Reactive Stream ───────────────────────────────────────
+\subsection*{6.\ Reactive Data Service — \texttt{todo.service.ts}}
+
+A \texttt{BehaviorSubject} acts as the in-memory task store; all components subscribe to it
+for instant UI updates without a full reload.
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+@Injectable({ providedIn: 'root' })
+export class TodoService {
+  private tasksSubject = new BehaviorSubject<Task[]>([]);
+  public tasks$ = this.tasksSubject.asObservable();
+
+  loadTasks(sortBy = 'createdAt'): void {
+    const params = new HttpParams().set('sortBy', sortBy);
+    // Auth header attached automatically by the interceptor
+    this.http.get<Task[]>(this.apiUrl, { params })
+      .pipe(tap(tasks => this.tasksSubject.next(tasks)))
+      .subscribe();
+  }
+
+  createTask(task: Task): Observable<Task> {
+    return this.http.post<Task>(this.apiUrl, task).pipe(
+      tap(created =>
+        this.tasksSubject.next(
+          this.sortTasks([created, ...this.tasksSubject.value])
+        )
+      )
+    );
+  }
+}
+\end{lstlisting}
+
+\subsection*{Output / Screenshots}
+
+\begin{screenshotbox}
+\textbf{[Screenshot 1]} Angular application running at \texttt{localhost:4200}\\[4pt]
+\textit{Insert screenshot here — Dashboard with tasks list, filters and stats bar.}\\[60pt]
+\rule{\linewidth}{0.4pt}
+\end{screenshotbox}
+
+\begin{screenshotbox}
+\textbf{[Screenshot 2]} Task detail page accessed via routing parameter \texttt{/task/:id}\\[4pt]
+\textit{Insert screenshot here.}\\[45pt]
+\rule{\linewidth}{0.4pt}
+\end{screenshotbox}
+
+\newpage
+
+%%═══════════════════════════════════════════════════════════════════════════════
+\section*{Practical 9 — Secure User Authentication System in Angular}
+%%═══════════════════════════════════════════════════════════════════════════════
+
+\subsection*{Aim}
+To implement a complete JWT-based user authentication system consisting of a login/register
+form, token storage in \texttt{localStorage}, an HTTP interceptor that auto-attaches the token,
+protected routes, and a logout function.
+
+\subsection*{Required Theory}
+\begin{itemize}
+  \item \textbf{JWT (JSON Web Token)} — a self-contained signed token encoding user identity.
+  \item \textbf{Bearer Authentication} — token sent in the \texttt{Authorization} HTTP header.
+  \item \textbf{Angular HTTP Interceptor} — middleware that transforms every outgoing request.
+  \item \textbf{Route Guard} — \texttt{CanActivateFn} that blocks unauthenticated navigation.
+  \item \textbf{BehaviorSubject} — reactive store holding the logged-in user state.
+\end{itemize}
+
+\subsection*{Authentication Flow}
+
+\begin{enumerate}
+  \item User submits login credentials via Angular form.
+  \item Frontend sends \texttt{POST /api/auth/login} to Express backend.
+  \item Backend verifies password hash and returns \texttt{\{token, user\}}.
+  \item \texttt{AuthService.storeSession()} saves token + user to \texttt{localStorage}.
+  \item Angular interceptor reads the token and attaches it to every \texttt{/api/*} request.
+  \item Auth guard checks \texttt{getToken()} before allowing access to \texttt{/dashboard}.
+  \item Logout clears storage and redirects to \texttt{/login}.
+\end{enumerate}
+
+%% ── 9.1 Backend: login endpoint ─────────────────────────────────────────────
+\subsection*{1.\ Node.js/Express — \texttt{backend/routes/auth.js}}
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+// POST /api/auth/login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  const user = await User.findOne(
+    { email: email.trim().toLowerCase() }
+  );
+
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    return res.status(401)
+              .json({ message: 'Invalid email or password' });
+  }
+
+  return res.json({
+    token: generateToken(user),   // signs a JWT
+    user:  sanitizeUser(user)     // strips passwordHash
+  });
+});
+
+// POST /api/auth/register
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body;
+  const user = await User.create({
+    name:         name.trim(),
+    email:        email.trim().toLowerCase(),
+    passwordHash: hashPassword(password)
+  });
+  return res.status(201).json({
+    token: generateToken(user),
+    user:  sanitizeUser(user)
+  });
+});
+\end{lstlisting}
+
+%% ── 9.2 Backend: auth middleware ─────────────────────────────────────────────
+\subsection*{2.\ JWT Middleware — \texttt{backend/middleware/auth.js}}
+
+All task routes pass through this middleware before executing:
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+export default async function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer '))
+    return res.status(401).json({ message: 'No token provided' });
+
+  const token   = authHeader.slice(7);
+  const payload = verifyToken(token);           // throws on invalid
+  const user    = await User.findById(payload.sub)
+                            .select('-passwordHash');
+  if (!user)
+    return res.status(401).json({ message: 'User not found' });
+
+  req.user = user;   // attach user to request
+  next();
+}
+\end{lstlisting}
+
+%% ── 9.3 AuthService ──────────────────────────────────────────────────────────
+\subsection*{3.\ Angular AuthService — \texttt{services/auth.service.ts}}
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly tokenKey = 'todo-auth-token';
+  private readonly userKey  = 'todo-auth-user';
+  private userSubject = new BehaviorSubject<AuthUser | null>(null);
+  readonly user$ = this.userSubject.asObservable();
+
+  // ── Login: POST credentials, store response ──
+  login(payload: { email: string; password: string })
+                                     : Observable<AuthUser> {
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/login`, payload)
+      .pipe(
+        tap(res  => this.storeSession(res)),   // save token+user
+        map(res  => res.user)
+      );
+  }
+
+  // ── Persist token + user to localStorage ──
+  private storeSession(res: AuthResponse): void {
+    localStorage.setItem(this.tokenKey, res.token);
+    localStorage.setItem(this.userKey, JSON.stringify(res.user));
+    this.userSubject.next(res.user);
+  }
+
+  // ── Read token safely (SSR-safe) ──
+  getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(this.tokenKey);
+  }
+
+  // ── Logout: clear everything ──
+  logout(): void {
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.userKey);
+    this.userSubject.next(null);
+  }
+}
+\end{lstlisting}
+
+%% ── 9.4 HTTP Interceptor ─────────────────────────────────────────────────────
+\subsection*{4.\ HTTP Interceptor — \texttt{interceptors/auth.interceptor.ts}}
+
+The interceptor clones every outgoing request targeting \texttt{/api/} and adds the
+\texttt{Authorization} header automatically:
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const platformId = inject(PLATFORM_ID);
+
+  // Skip on server — localStorage unavailable during SSR
+  if (!isPlatformBrowser(platformId)) return next(req);
+
+  const token = inject(AuthService).getToken();
+
+  if (token && req.url.includes('/api/')) {
+    const cloned = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` }
+    });
+    return next(cloned);     // forward the modified request
+  }
+
+  return next(req);          // pass through unchanged
+};
+\end{lstlisting}
+
+The interceptor is registered globally in \texttt{app.config.ts}:
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([authInterceptor])  // register globally
+    ),
+    provideRouter(routes),
+    provideClientHydration(withEventReplay())
+  ]
+};
+\end{lstlisting}
+
+%% ── 9.5 Route Guard ──────────────────────────────────────────────────────────
+\subsection*{5.\ Auth Guard — \texttt{guards/auth.guard.ts}}
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+export const authGuard: CanActivateFn = () => {
+  const auth   = inject(AuthService);
+  const router = inject(Router);
+
+  if (auth.getToken()) return true;    // allow navigation
+
+  // Redirect unauthenticated users to the login page
+  router.navigate(['/login']);
+  return false;
+};
+\end{lstlisting}
+
+The guard is applied in the route table via \texttt{canActivate: [authGuard]} on
+\texttt{/dashboard} and \texttt{/task/:id}.
+
+%% ── 9.6 Logout ───────────────────────────────────────────────────────────────
+\subsection*{6.\ Logout — \texttt{todo-list.component.ts}}
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+requestLogout(): void {
+  this.authService.logout();      // clear token + user state
+  this.todoService.clearTasks();  // wipe in-memory task list
+  this.router.navigate(['/login']);
+}
+\end{lstlisting}
+
+%% ── 9.7 Session Restore on Reload ────────────────────────────────────────────
+\subsection*{7.\ Session Restore on Page Reload — \texttt{app.ts}}
+
+\begin{lstlisting}[style=ts, language={[Sharp]C}]
+ngOnInit(): void {
+  // 1. Populate user$ immediately from localStorage
+  this.authService.hydrateSessionFromStorage();
+
+  // 2. Validate token against backend (async)
+  this.authService.restoreSession().subscribe(user => {
+    this.isCheckingSession = false;
+    if (user) {
+      // Token valid — stay on current page
+    } else {
+      // Token expired or invalid — force re-login
+      this.todoService.clearTasks();
+      this.router.navigate(['/login']);
+    }
+  });
+}
+\end{lstlisting}
+
+\subsection*{Output / Screenshots}
+
+\begin{screenshotbox}
+\textbf{[Screenshot 3]} Login page — Angular form with email/password fields\\[4pt]
+\textit{Insert screenshot here.}\\[60pt]
+\rule{\linewidth}{0.4pt}
+\end{screenshotbox}
+
+\begin{screenshotbox}
+\textbf{[Screenshot 4]} Successful login — redirected to protected \texttt{/dashboard}\\[4pt]
+\textit{Insert screenshot here.}\\[45pt]
+\rule{\linewidth}{0.4pt}
+\end{screenshotbox}
+
+\begin{screenshotbox}
+\textbf{[Screenshot 5]} Browser DevTools — \texttt{localStorage} storing JWT token\\[4pt]
+\textit{Insert screenshot here (Application → Local Storage).}\\[45pt]
+\rule{\linewidth}{0.4pt}
+\end{screenshotbox}
+
+\begin{screenshotbox}
+\textbf{[Screenshot 6]} Network tab — \texttt{Authorization: Bearer ...} header on API request\\[4pt]
+\textit{Insert screenshot here (Network → /api/tasks → Request Headers).}\\[45pt]
+\rule{\linewidth}{0.4pt}
+\end{screenshotbox}
+
+\begin{screenshotbox}
+\textbf{[Screenshot 7]} Direct navigation to \texttt{/dashboard} while logged out — redirected to \texttt{/login}\\[4pt]
+\textit{Insert screenshot here showing route guard in action.}\\[45pt]
+\rule{\linewidth}{0.4pt}
+\end{screenshotbox}
+
+%%═══════════════════════════════════════════════════════════════════════════════
+\section*{Result}
+%%═══════════════════════════════════════════════════════════════════════════════
+
+\textbf{Practical 8} — A fully functional Angular SPA was built demonstrating modular
+standalone components, lazy-loaded routing, route parameters (\texttt{/task/:id}),
+template-driven forms with two-way binding (\texttt{[(ngModel)]}), and a reactive data
+service using \texttt{BehaviorSubject}.
+
+\textbf{Practical 9} — A complete JWT authentication system was implemented.  The login
+form posts credentials to the Express backend, the returned token is stored in
+\texttt{localStorage}, an Angular HTTP interceptor automatically attaches it to every
+\texttt{/api/*} request, an auth guard blocks unauthenticated users from protected routes,
+and a logout function clears all session data and redirects to the login page.
+
+\end{document}

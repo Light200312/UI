@@ -1,0 +1,595 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{longtable}
+\usepackage{titlesec}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue
+}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{220,220,220}
+\definecolor{codecomment}{RGB}{0,128,0}
+\definecolor{codestring}{RGB}{163,21,21}
+\definecolor{codekeyword}{RGB}{0,0,180}
+
+\lstdefinestyle{projectcode}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  showstringspaces=false,
+  keywordstyle=\color{codekeyword}\bfseries,
+  commentstyle=\color{codecomment},
+  stringstyle=\color{codestring},
+  columns=fullflexible
+}
+
+\setstretch{1.15}
+\setlist[itemize]{noitemsep, topsep=4pt}
+\setlist[enumerate]{noitemsep, topsep=4pt}
+
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{}{0em}{}
+
+\begin{document}
+
+\begin{center}
+{\LARGE \textbf{MEAN Stack Practical File}}\\[1em]
+{\large \textbf{Project Title:} Authenticated Todo Management Application using MongoDB, Express, Angular, and Node.js}
+\end{center}
+
+\section*{Project Overview}
+This project is a MEAN stack practical application in which:
+\begin{itemize}
+  \item MongoDB stores users and todo tasks
+  \item Express and Node.js provide REST APIs
+  \item Mongoose defines data models and connects the backend to MongoDB
+  \item Angular builds the single-page frontend
+  \item Login and registration are used to authenticate users before accessing todos
+\end{itemize}
+
+\section*{Practical 4}
+\subsection*{To Install MongoDB and Create a New Document/Database using CRUD Operations like Insert, Update, Read and Delete}
+
+\subsubsection*{Aim}
+To install MongoDB, create a database for the todo application, and perform CRUD operations on task documents.
+
+\subsubsection*{Required Theory}
+MongoDB is a NoSQL document database. Data is stored in BSON-like documents inside collections.
+
+In this project:
+\begin{itemize}
+  \item Database name: \texttt{todo-app}
+  \item Collections used: \texttt{users}, \texttt{tasks}
+  \item CRUD means:
+  \begin{itemize}
+    \item Create: insert a new document
+    \item Read: fetch existing documents
+    \item Update: modify an existing document
+    \item Delete: remove an existing document
+  \end{itemize}
+\end{itemize}
+
+\subsubsection*{Commands Used}
+\begin{lstlisting}[style=projectcode,language=bash]
+# Install MongoDB on Ubuntu
+sudo apt update
+sudo apt install -y mongodb
+
+# Start MongoDB service
+sudo systemctl start mongodb
+sudo systemctl enable mongodb
+
+# Check status
+sudo systemctl status mongodb
+
+# Open Mongo shell
+mongosh
+\end{lstlisting}
+
+\subsubsection*{Create Database and Use It}
+\begin{lstlisting}[style=projectcode]
+use todo-app
+\end{lstlisting}
+
+\subsubsection*{Basic MongoDB CRUD Commands}
+\begin{lstlisting}[style=projectcode]
+db.tasks.insertOne({
+  title: "Complete MEAN practical",
+  description: "Write report and screenshots",
+  completed: false,
+  priority: "high",
+  category: "College"
+})
+
+db.tasks.find()
+
+db.tasks.updateOne(
+  { title: "Complete MEAN practical" },
+  { $set: { completed: true } }
+)
+
+db.tasks.deleteOne({ title: "Complete MEAN practical" })
+\end{lstlisting}
+
+\subsubsection*{How CRUD Appears in This Project}
+The backend route file performs CRUD through Express APIs.
+
+\subsubsection*{Important Code Snippet}
+From \texttt{backend/routes/tasks.js}
+\begin{lstlisting}[style=projectcode]
+router.post('/', async (req, res) => {
+  const task = new Task({
+    userId: req.user._id,
+    title: req.body.title,
+    description: req.body.description || '',
+    priority: req.body.priority || 'medium',
+    dueDate: req.body.dueDate || null,
+    category: req.body.category || 'General'
+  });
+
+  const newTask = await task.save();
+  res.status(201).json(newTask);
+});
+\end{lstlisting}
+
+\begin{lstlisting}[style=projectcode]
+router.get('/', async (req, res) => {
+  let filter = { userId: req.user._id };
+  const tasks = await Task.find(filter).sort({ createdAt: -1 }).exec();
+  res.json(tasks);
+});
+\end{lstlisting}
+
+\begin{lstlisting}[style=projectcode]
+router.patch('/:id', async (req, res) => {
+  const task = await Task.findOne({ _id: req.params.id, userId: req.user._id });
+  if (req.body.title !== undefined) task.title = req.body.title;
+  const updatedTask = await task.save();
+  res.json(updatedTask);
+});
+\end{lstlisting}
+
+\begin{lstlisting}[style=projectcode]
+router.delete('/:id', async (req, res) => {
+  await Task.deleteOne({ _id: req.params.id, userId: req.user._id });
+  res.json({ message: 'Task deleted successfully' });
+});
+\end{lstlisting}
+
+\subsubsection*{Output / Screenshot Space}
+\texttt{[Insert screenshot: MongoDB service running]}
+
+\texttt{[Insert screenshot: documents visible in MongoDB Compass or mongosh]}
+
+\section*{Practical 5}
+\subsection*{To Build a Data Model with MongoDB and Mongoose}
+
+\subsubsection*{Aim}
+To define structured schemas for the application data using Mongoose.
+
+\subsubsection*{Required Theory}
+Mongoose is an ODM (Object Data Modeling) library for MongoDB and Node.js. It allows us to:
+\begin{itemize}
+  \item define schemas
+  \item add validation
+  \item specify default values
+  \item create models for database operations
+\end{itemize}
+
+This project has two main models:
+\begin{itemize}
+  \item \texttt{User}
+  \item \texttt{Task}
+\end{itemize}
+
+\subsubsection*{Important Code Snippets}
+From \texttt{backend/models/User.js}
+\begin{lstlisting}[style=projectcode]
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+    passwordHash: { type: String, required: true }
+  },
+  { timestamps: true }
+);
+\end{lstlisting}
+
+From \texttt{backend/models/Task.js}
+\begin{lstlisting}[style=projectcode]
+const taskSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
+  },
+  completed: {
+    type: Boolean,
+    default: false
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  }
+});
+\end{lstlisting}
+
+\subsubsection*{Explanation}
+\begin{itemize}
+  \item \texttt{required: true} ensures important fields are compulsory
+  \item \texttt{unique: true} prevents duplicate email registration
+  \item \texttt{enum} restricts priority values
+  \item \texttt{timestamps} and date fields help track record creation and updates
+  \item \texttt{userId} links a task to the logged-in user
+\end{itemize}
+
+\subsubsection*{Output / Screenshot Space}
+\texttt{[Insert screenshot: User and Task schema files]}
+
+\section*{Practical 6}
+\subsection*{Connect Express Application to MongoDB using Mongoose}
+
+\subsubsection*{Aim}
+To connect the Express backend application with the MongoDB database using Mongoose.
+
+\subsubsection*{Required Theory}
+The Express server must establish a database connection before serving API requests. Mongoose uses \texttt{mongoose.connect()} to connect to the MongoDB URI.
+
+\subsubsection*{Important Code Snippet}
+From \texttt{backend/config/db.js}
+\begin{lstlisting}[style=projectcode]
+import mongoose from 'mongoose';
+
+const connectDB = async () => {
+  const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/todo-app';
+  const conn = await mongoose.connect(mongoURI);
+  console.log(`MongoDB connected: ${conn.connection.host}`);
+};
+\end{lstlisting}
+
+From \texttt{backend/server.js}
+\begin{lstlisting}[style=projectcode]
+dotenv.config();
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+await connectDB();
+\end{lstlisting}
+
+\subsubsection*{Commands Used}
+\begin{lstlisting}[style=projectcode,language=bash]
+cd backend
+npm install
+npm run dev
+\end{lstlisting}
+
+\subsubsection*{Environment File}
+Create \texttt{backend/.env}
+\begin{lstlisting}[style=projectcode]
+MONGODB_URI=mongodb://localhost:27017/todo-app
+JWT_SECRET=your-secret-key
+PORT=5000
+\end{lstlisting}
+
+\subsubsection*{Explanation}
+\begin{itemize}
+  \item \texttt{dotenv.config()} loads values from \texttt{.env}
+  \item \texttt{connectDB()} opens MongoDB connection
+  \item Express middleware handles JSON request bodies
+  \item Backend starts only after successful database connection
+\end{itemize}
+
+\subsubsection*{Output / Screenshot Space}
+\texttt{[Insert screenshot: terminal showing MongoDB connected]}
+
+\section*{Practical 7}
+\subsection*{To Create an Angular Application and Working with its Components}
+
+\subsubsection*{Aim}
+To create an Angular frontend and divide the interface into reusable standalone components.
+
+\subsubsection*{Required Theory}
+Angular applications are built from components. A component usually contains:
+\begin{itemize}
+  \item TypeScript logic
+  \item HTML template
+  \item CSS styling
+\end{itemize}
+
+In this project, the main components are:
+\begin{itemize}
+  \item \texttt{AuthComponent}
+  \item \texttt{TodoListComponent}
+  \item \texttt{TodoFormComponent}
+  \item \texttt{TodoItemComponent}
+\end{itemize}
+
+\subsubsection*{Commands Used}
+\begin{lstlisting}[style=projectcode,language=bash]
+cd UI
+npm install
+npm start
+\end{lstlisting}
+
+\subsubsection*{Important Code Snippets}
+From \texttt{UI/src/app/app.ts}
+\begin{lstlisting}[style=projectcode]
+@Component({
+  selector: 'app-root',
+  imports: [CommonModule, TodoListComponent, AuthComponent],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
+})
+\end{lstlisting}
+
+From \texttt{UI/src/app/components/auth/auth.component.ts}
+\begin{lstlisting}[style=projectcode]
+export class AuthComponent {
+  mode: 'login' | 'register' = 'login';
+  form = {
+    name: '',
+    email: '',
+    password: ''
+  };
+}
+\end{lstlisting}
+
+From \texttt{UI/src/app/components/todo-list/todo-list.component.ts}
+\begin{lstlisting}[style=projectcode]
+export class TodoListComponent implements OnInit {
+  tasks: Task[] = [];
+  filteredTasks: Task[] = [];
+  showForm = false;
+  showFilters = true;
+}
+\end{lstlisting}
+
+\subsubsection*{Explanation}
+\begin{itemize}
+  \item \texttt{App} is the root component
+  \item \texttt{AuthComponent} handles login and registration
+  \item \texttt{TodoListComponent} shows all todo operations
+  \item \texttt{TodoFormComponent} is used for adding and editing tasks
+  \item \texttt{TodoItemComponent} displays each individual todo item
+\end{itemize}
+
+\subsubsection*{Output / Screenshot Space}
+\texttt{[Insert screenshot: Angular component folder structure]}
+
+\section*{Practical 8}
+\subsection*{To Build a Single-Page Application with Angular}
+
+\subsubsection*{Aim}
+To build a SPA where the user interacts with the todo system without full page reloads.
+
+\subsubsection*{Required Theory}
+A Single-Page Application loads once in the browser, then updates content dynamically using components and services.
+
+Angular achieves this using:
+\begin{itemize}
+  \item data binding
+  \item component communication
+  \item services
+  \item HTTP client
+\end{itemize}
+
+This project behaves as an SPA because:
+\begin{itemize}
+  \item login/register happens in the same frontend
+  \item task create/update/delete happens instantly
+  \item data refreshes dynamically after API calls
+\end{itemize}
+
+\subsubsection*{Important Code Snippets}
+From \texttt{UI/src/app/app.html}
+\begin{lstlisting}[style=projectcode]
+<app-auth
+  *ngIf="!isCheckingSession && !currentUser"
+  (authenticated)="onAuthenticated($event)"
+></app-auth>
+
+<app-todo-list
+  *ngIf="!isCheckingSession && currentUser"
+  [currentUser]="currentUser"
+  (logout)="onLogout()"
+></app-todo-list>
+\end{lstlisting}
+
+From \texttt{UI/src/app/services/todo.service.ts}
+\begin{lstlisting}[style=projectcode]
+private tasksSubject = new BehaviorSubject<Task[]>([]);
+public tasks$ = this.tasksSubject.asObservable();
+\end{lstlisting}
+
+\begin{lstlisting}[style=projectcode]
+this.http.get<Task[]>(this.apiUrl, { params, headers: this.authService.getAuthHeaders() })
+  .pipe(tap(tasks => this.tasksSubject.next(tasks)))
+  .subscribe();
+\end{lstlisting}
+
+\subsubsection*{Explanation}
+\begin{itemize}
+  \item \texttt{*ngIf} swaps between login screen and todo screen
+  \item \texttt{BehaviorSubject} stores current tasks in memory
+  \item Angular updates the UI as soon as data changes
+  \item No manual page reload is needed for normal operations
+\end{itemize}
+
+\subsubsection*{Output / Screenshot Space}
+\texttt{[Insert screenshot: login page]}
+
+\texttt{[Insert screenshot: todo dashboard after login]}
+
+\section*{Practical 9}
+\subsection*{To Construct a Simple Login Page Web Application to Authenticate Users using MEAN Stack}
+
+\subsubsection*{Aim}
+To create a user authentication system using Angular frontend, Express backend, MongoDB database, and Mongoose models.
+
+\subsubsection*{Required Theory}
+Authentication verifies user identity before granting access to application resources.
+
+In this project:
+\begin{itemize}
+  \item registration creates a new user
+  \item login validates email and password
+  \item token-based authentication protects task APIs
+  \item the session is restored on reload using stored token and user data
+\end{itemize}
+
+\subsubsection*{Authentication Flow in This Project}
+\begin{enumerate}
+  \item User opens Angular app
+  \item User registers or logs in
+  \item Backend verifies credentials
+  \item Backend returns token and user data
+  \item Frontend stores session
+  \item Protected todo APIs send token in \texttt{Authorization} header
+  \item Backend middleware validates token before allowing CRUD operations
+\end{enumerate}
+
+\subsubsection*{Important Code Snippets}
+From \texttt{backend/routes/auth.js}
+\begin{lstlisting}[style=projectcode]
+router.post('/register', async (req, res) => {
+  const user = await User.create({
+    name: name.trim(),
+    email: normalizedEmail,
+    passwordHash: hashPassword(password)
+  });
+
+  return res.status(201).json({
+    token: generateToken(user),
+    user: sanitizeUser(user)
+  });
+});
+\end{lstlisting}
+
+\begin{lstlisting}[style=projectcode]
+router.post('/login', async (req, res) => {
+  const user = await User.findOne({ email: email.trim().toLowerCase() });
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+});
+\end{lstlisting}
+
+From \texttt{backend/middleware/auth.js}
+\begin{lstlisting}[style=projectcode]
+const authHeader = req.headers.authorization;
+const token = authHeader.slice(7);
+const payload = verifyToken(token);
+const user = await User.findById(payload.sub).select('-passwordHash');
+req.user = user;
+\end{lstlisting}
+
+From \texttt{UI/src/app/services/auth.service.ts}
+\begin{lstlisting}[style=projectcode]
+login(payload: { email: string; password: string }): Observable<AuthUser> {
+  return this.http.post<AuthResponse>(`${this.apiUrl}/login`, payload).pipe(
+    tap((response) => this.storeSession(response)),
+    map((response) => response.user)
+  );
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=projectcode]
+getAuthHeaders(): HttpHeaders {
+  const token = this.getToken();
+  return token
+    ? new HttpHeaders({ Authorization: `Bearer ${token}` })
+    : new HttpHeaders();
+}
+\end{lstlisting}
+
+\subsubsection*{Commands Used}
+\begin{lstlisting}[style=projectcode,language=bash]
+# Backend
+cd backend
+npm install
+npm run dev
+
+# Frontend
+cd ../UI
+npm install
+npm start
+\end{lstlisting}
+
+\subsubsection*{Testing the Login Practical}
+\begin{enumerate}
+  \item Open the Angular app in browser
+  \item Register a new user account
+  \item Login using the registered email and password
+  \item Add a new todo
+  \item Reload the page and verify session persistence
+  \item Logout and verify protected access is removed
+\end{enumerate}
+
+\subsubsection*{Output / Screenshot Space}
+\texttt{[Insert screenshot: registration page]}
+
+\texttt{[Insert screenshot: login success]}
+
+\texttt{[Insert screenshot: session retained after reload]}
+
+\section*{Project Folder Reference}
+\begin{lstlisting}[style=projectcode]
+MEAN_Practical/
+├── backend/
+│   ├── config/db.js
+│   ├── middleware/auth.js
+│   ├── models/Task.js
+│   ├── models/User.js
+│   ├── routes/auth.js
+│   ├── routes/tasks.js
+│   └── server.js
+└── UI/
+    └── src/app/
+        ├── components/auth/
+        ├── components/todo-form/
+        ├── components/todo-item/
+        ├── components/todo-list/
+        ├── models/
+        └── services/
+\end{lstlisting}
+
+\section*{Result}
+The MEAN stack practical application was successfully implemented. MongoDB was used for storing users and todos, Mongoose was used for schema modeling, Express was connected to MongoDB through Mongoose, Angular components were used to build the frontend SPA, and a login/registration system was implemented to authenticate users.
+
+\section*{Viva / Conclusion Points}
+\begin{itemize}
+  \item MongoDB stores data in document form
+  \item Mongoose provides schema-based modeling
+  \item Express builds REST APIs
+  \item Angular components create modular UI
+  \item SPA avoids full-page reloads
+  \item Authentication secures the todo operations
+  \item \texttt{userId} ensures one user only sees their own tasks
+\end{itemize}
+
+\end{document}
