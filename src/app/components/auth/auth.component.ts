@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AuthUser } from '../../models/user.model';
 
 @Component({
   selector: 'app-auth',
@@ -12,8 +12,6 @@ import { AuthUser } from '../../models/user.model';
   styleUrl: './auth.component.css'
 })
 export class AuthComponent {
-  @Output() authenticated = new EventEmitter<AuthUser>();
-
   mode: 'login' | 'register' = 'login';
   isSubmitting = false;
   errorMessage = '';
@@ -23,7 +21,10 @@ export class AuthComponent {
     password: ''
   };
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   setMode(mode: 'login' | 'register'): void {
     this.mode = mode;
@@ -58,9 +59,10 @@ export class AuthComponent {
           });
 
     request$.subscribe({
-      next: (user) => {
+      next: () => {
         this.isSubmitting = false;
-        this.authenticated.emit(user);
+        // Navigate to protected dashboard after successful auth
+        this.router.navigate(['/dashboard']);
       },
       error: (error) => {
         this.isSubmitting = false;

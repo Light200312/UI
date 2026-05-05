@@ -1,0 +1,39 @@
+<div class="detail-container">
+  <button class="btn-back" (click)="goBack()">← Back to Dashboard</button>
+
+  <div *ngIf="isLoading" class="loading-state">
+    Loading task...
+  </div>
+
+  <div *ngIf="errorMessage" class="error-state">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && task" class="task-card">
+    <div class="task-header">
+      <span class="status-badge" [class.completed]="task.completed">
+        {{ task.completed ? '✓ Completed' : '○ Pending' }}
+      </span>
+      <span class="priority-badge">{{ getPriorityLabel(task.priority) }}</span>
+    </div>
+
+    <h1 class="task-title">{{ task.title }}</h1>
+
+    <p *ngIf="task.description" class="task-description">{{ task.description }}</p>
+
+    <div class="task-meta">
+      <div class="meta-item">
+        <span class="meta-label">Category</span>
+        <span class="meta-value">{{ task.category }}</span>
+      </div>
+      <div *ngIf="task.dueDate" class="meta-item">
+        <span class="meta-label">Due Date</span>
+        <span class="meta-value">{{ task.dueDate | date: 'mediumDate' }}</span>
+      </div>
+      <div *ngIf="task.createdAt" class="meta-item">
+        <span class="meta-label">Created</span>
+        <span class="meta-value">{{ task.createdAt | date: 'mediumDate' }}</span>
+      </div>
+    </div>
+  </div>
+</div>

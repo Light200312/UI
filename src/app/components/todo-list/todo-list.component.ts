@@ -1,11 +1,13 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TodoService } from '../../services/todo.service';
+import { AuthService } from '../../services/auth.service';
 import { Task } from '../../models/task.model';
+import { AuthUser } from '../../models/user.model';
 import { TodoFormComponent } from '../todo-form/todo-form.component';
 import { TodoItemComponent } from '../todo-item/todo-item.component';
-import { AuthUser } from '../../models/user.model';
 
 @Component({
   selector: 'app-todo-list',
@@ -15,8 +17,7 @@ import { AuthUser } from '../../models/user.model';
   styleUrls: ['./todo-list.component.css']
 })
 export class TodoListComponent implements OnInit {
-  @Input() currentUser: AuthUser | null = null;
-  @Output() logout = new EventEmitter<void>();
+  currentUser: AuthUser | null = null;
 
   tasks: Task[] = [];
   filteredTasks: Task[] = [];
@@ -33,9 +34,16 @@ export class TodoListComponent implements OnInit {
 
   categories: string[] = ['General'];
 
-  constructor(private todoService: TodoService) {}
+  constructor(
+    private todoService: TodoService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
+    // Get current user from auth service
+    this.currentUser = this.authService.getCurrentUser();
+
     this.loadTasks();
     this.todoService.getTasks().subscribe(tasks => {
       this.tasks = tasks;
@@ -158,6 +166,15 @@ export class TodoListComponent implements OnInit {
   }
 
   requestLogout(): void {
-    this.logout.emit();
+    this.authService.logout();
+    this.todoService.clearTasks();
+    // Redirect to login after logout
+    this.router.navigate(['/login']);
+  }
+
+  viewTaskDetail(task: Task): void {
+    if (task._id) {
+      this.router.navigate(['/task', task._id]);
+    }
   }
 }

@@ -2,13 +2,5 @@
   <div class="loading-card">Checking your session...</div>
 </div>
 
-<app-auth
-  *ngIf="!isCheckingSession && !currentUser"
-  (authenticated)="onAuthenticated($event)"
-></app-auth>
-
-<app-todo-list
-  *ngIf="!isCheckingSession && currentUser"
-  [currentUser]="currentUser"
-  (logout)="onLogout()"
-></app-todo-list>
+<!-- Once session check is done, let the router handle which component to show -->
+<router-outlet *ngIf="!isCheckingSession" />

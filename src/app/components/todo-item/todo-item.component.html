@@ -41,5 +41,7 @@
   <div class="item-actions">
     <button class="btn-icon edit" (click)="editTask()" title="Edit">✏️</button>
     <button class="btn-icon delete" (click)="deleteTask()" title="Delete">🗑️</button>
+    <!-- Navigate to /task/:id using routerLink — demonstrates routing parameters -->
+    <a *ngIf="task._id" [routerLink]="['/task', task._id]" class="btn-icon view" title="View Detail">🔍</a>
   </div>
 </div>
