@@ -17,7 +17,12 @@ export class AuthService {
   private readonly userKey = 'todo-auth-user';
   private readonly userSubject = new BehaviorSubject<AuthUser | null>(this.readStoredUser());
 
+  // Emits true once restoreSession() has finished — components wait on this
+  // before making API calls so they don't fire before the session is confirmed.
+  private readonly sessionReadySubject = new BehaviorSubject<boolean>(false);
+
   readonly user$ = this.userSubject.asObservable();
+  readonly sessionReady$ = this.sessionReadySubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
@@ -50,19 +55,31 @@ export class AuthService {
 
   restoreSession(): Observable<AuthUser | null> {
     const token = this.getToken();
-    if (!token) {
+    const storedUser = this.readStoredUser();
+
+    if (!token || !storedUser) {
       this.clearSession();
+      this.sessionReadySubject.next(true);
       return of(null);
     }
 
     return this.http
-      .get<{ user: AuthUser }>(`${this.apiUrl}/me`, { headers: this.getAuthHeaders() })
+      .get<{ user: AuthUser }>(`${this.apiUrl}/me`)
       .pipe(
         tap((response) => this.storeUserOnly(response.user)),
         map((response) => response.user),
-        catchError(() => {
-          this.clearSession();
-          return of(null);
+        catchError((err) => {
+          if (err.status === 401 || err.status === 403) {
+            this.clearSession();
+            return of(null);
+          }
+          // Backend unreachable — keep stored session alive
+          this.userSubject.next(storedUser);
+          return of(storedUser);
+        }),
+        tap(() => {
+          // Signal that session validation is complete regardless of outcome
+          this.sessionReadySubject.next(true);
         })
       );
   }

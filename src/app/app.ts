@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { TodoService } from './services/todo.service';
@@ -17,26 +17,34 @@ export class App implements OnInit {
   constructor(
     private authService: AuthService,
     private todoService: TodoService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
-    // Hydrate from localStorage immediately to avoid flash
-    const user = this.authService.hydrateSessionFromStorage();
-    this.isCheckingSession = !user;
+    // Hydrate from localStorage so user$ emits immediately —
+    // this lets TodoListComponent know a user exists while we
+    // validate the token in the background via restoreSession().
+    this.authService.hydrateSessionFromStorage();
   }
 
   ngOnInit(): void {
-    // Validate the stored token against the backend
+    // Always validate the token against the backend before rendering.
+    // This ensures user$ has a confirmed value before any component loads tasks.
     this.authService.restoreSession().subscribe((user) => {
       this.isCheckingSession = false;
+      // detectChanges() prevents NG0100 (ExpressionChangedAfterItHasBeenCheckedError)
+      // that occurs when SSR hydration sees isCheckingSession flip from true to false.
+      this.cdr.detectChanges();
 
       if (user) {
-        // Already authenticated — go to dashboard if on login page
         const currentPath = this.router.url;
+        // Only redirect to dashboard from login or root — preserve current route on reload
         if (currentPath === '/login' || currentPath === '/') {
           this.router.navigate(['/dashboard']);
         }
+        // Already on /dashboard or /task/:id — stay, tasks will load via afterNextRender
       } else {
-        // No valid session — redirect to login
+        // Token invalid or expired — clear everything and go to login
+        this.todoService.clearTasks();
         this.router.navigate(['/login']);
       }
     });

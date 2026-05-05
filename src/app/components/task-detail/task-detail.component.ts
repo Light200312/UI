@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { timeout, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { TodoService } from '../../services/todo.service';
 import { Task } from '../../models/task.model';
 
@@ -41,15 +43,18 @@ export class TaskDetailComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.todoService.getTask(id).subscribe({
-      next: (task) => {
-        this.task = task;
-        this.isLoading = false;
-      },
-      error: () => {
+    this.todoService.getTask(id).pipe(
+      timeout(8000), // fail after 8 seconds instead of hanging forever
+      catchError(() => {
         this.errorMessage = 'Task not found or you do not have access.';
         this.isLoading = false;
+        return of(null);
+      })
+    ).subscribe((task) => {
+      if (task) {
+        this.task = task;
       }
+      this.isLoading = false;
     });
   }
 

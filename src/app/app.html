@@ -1,6 +1,6 @@
+<!-- Loading overlay shown while validating session — router outlet stays mounted underneath -->
 <div *ngIf="isCheckingSession" class="app-loading">
   <div class="loading-card">Checking your session...</div>
 </div>
 
-<!-- Once session check is done, let the router handle which component to show -->
-<router-outlet *ngIf="!isCheckingSession" />
+<router-outlet />

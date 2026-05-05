@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, afterNextRender, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter, take } from 'rxjs/operators';
 import { TodoService } from '../../services/todo.service';
 import { AuthService } from '../../services/auth.service';
 import { Task } from '../../models/task.model';
@@ -16,7 +18,7 @@ import { TodoItemComponent } from '../todo-item/todo-item.component';
   templateUrl: './todo-list.component.html',
   styleUrls: ['./todo-list.component.css']
 })
-export class TodoListComponent implements OnInit {
+export class TodoListComponent implements OnInit, OnDestroy {
   currentUser: AuthUser | null = null;
 
   tasks: Task[] = [];
@@ -25,7 +27,7 @@ export class TodoListComponent implements OnInit {
   editingTask: Task | null = null;
   
   // Filter and sort options
-  filterStatus = 'all'; // all, completed, pending
+  filterStatus = 'all';
   filterPriority = 'all';
   filterCategory = 'all';
   sortBy = 'createdAt';
@@ -34,22 +36,54 @@ export class TodoListComponent implements OnInit {
 
   categories: string[] = ['General'];
 
+  private subs = new Subscription();
+
+  private cdr = inject(ChangeDetectorRef);
+
   constructor(
     private todoService: TodoService,
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) {
+    // afterNextRender fires once after the first client-side render and never on the server.
+    // This is the Angular 17+ idiomatic way to make authenticated API calls in SSR apps —
+    // it guarantees localStorage is available (so the token can be read) and avoids
+    // NG0100 ExpressionChangedAfterItHasBeenCheckedError from SSR hydration.
+    afterNextRender(() => {
+      this.loadTasks();
+    });
+  }
 
   ngOnInit(): void {
-    // Get current user from auth service
-    this.currentUser = this.authService.getCurrentUser();
+    // The auth guard guarantees a token exists before this component mounts.
+    // hydrateSessionFromStorage() has already set the user synchronously.
+    // So we can load tasks immediately without waiting for sessionReady$.
 
-    this.loadTasks();
-    this.todoService.getTasks().subscribe(tasks => {
-      this.tasks = tasks;
-      this.filterAndSortTasks();
-      this.extractCategories();
-    });
+    // Track the current user for display (name in header etc.)
+    this.subs.add(
+      this.authService.user$.pipe(
+        filter((u): u is AuthUser => u !== null),
+        take(1)
+      ).subscribe((u) => {
+        this.currentUser = u;
+      })
+    );
+
+    // Subscribe to task stream — receives updates from loadTasks() and mutations.
+    // markForCheck() forces Angular to re-render after SSR hydration suppresses automatic detection.
+    this.subs.add(
+      this.todoService.getTasks().subscribe((tasks) => {
+        this.tasks = tasks;
+        this.filterAndSortTasks();
+        this.extractCategories();
+        this.cdr.markForCheck();
+      })
+    );
+
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
   }
 
   loadTasks(): void {
